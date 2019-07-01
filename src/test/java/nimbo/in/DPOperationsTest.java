@@ -16,6 +16,7 @@ public class DPOperationsTest {
 
     @Test
     public void createDBTest() throws ClassNotFoundException, SQLException {
+        DBOperations.createDB();
         Connection conn;
         Class.forName(JDBC_DRIVER);
         conn = DriverManager.getConnection(DB_URL + DB_NAME, USER, PASS);

@@ -15,7 +15,7 @@ public class DBOperations {
     private static final String PASS = "";
 
 
-    private static void createDB() {
+    public static void createDB() {
         Connection conn = null;
         Statement stmt = null;
         try {
@@ -32,7 +32,10 @@ public class DBOperations {
             String sql = "CREATE DATABASE RSSFeed";
             stmt.executeUpdate(sql);
             System.out.println("Database created successfully...");
-        } catch (Exception se) {
+        } catch (SQLException ignored) {
+            System.out.println("Database was exist!");
+        }
+        catch (Exception se) {
             se.printStackTrace();
         } finally {
             try {
