@@ -62,6 +62,7 @@ public class DPOperationsTest {
         set2.add("id");
         set2.add("Title");
         set2.add("Link");
+        set2.add("Description");
         set2.add("Author");
         set2.add("PublishedDate");
         set2.add("RSSLink");
@@ -82,6 +83,7 @@ public class DPOperationsTest {
         Set<String> set2 = new HashSet<>();
         while (resultSet.next())
             set1.add(resultSet.getString(1));
+        set2.add("id");
         set2.add("RSSLink");
         set2.add("Title");
         set2.add("Link");

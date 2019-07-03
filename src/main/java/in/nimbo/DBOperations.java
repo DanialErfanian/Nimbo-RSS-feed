@@ -54,7 +54,7 @@ public class DBOperations {
 
             try {
                 String sql = "CREATE TABLE IF NOT EXISTS RSSChannel " +
-                        "(\nid int(11) NOT NULL AUTO_INCREMENT, " +
+                        "(id int(11) NOT NULL AUTO_INCREMENT, " +
                         " RSSLink TEXT not NULL, " +
                         " Title TEXT, " +
                         " Link TEXT, " +
@@ -109,7 +109,6 @@ public class DBOperations {
                 ResultSet rs = pstm.getGeneratedKeys();
                 if (rs.next()) {
                     tableId = rs.getInt(1);
-                    System.out.println(tableId);
                 }
                 System.out.println("Add data in RSSChannel table finished.");
             } catch (Exception ex) {
@@ -157,6 +156,7 @@ public class DBOperations {
     public static void main(String[] args) {
         createDB();
         createTables();
-        RSSRead("http://www.iribnews.ir/fa/rss/allnews");
+        RSSRead("https://90tv.ir/rss/news");
+        RSSRead("https://www.tabnak.ir/fa/rss/1");
     }
 }
