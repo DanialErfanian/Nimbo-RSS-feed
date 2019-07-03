@@ -32,11 +32,8 @@ public class DBOperations {
 
     private static Logger logger;
 
-    public static void init() {
-        logger = LoggerFactory.getLogger(DBOperations.class);
-    }
-
     public static void createDB() {
+        logger = LoggerFactory.getLogger(DBOperations.class);
         try {
             Class.forName(JDBC_DRIVER);
 
@@ -234,7 +231,6 @@ public class DBOperations {
     }
 
     public static void main(String[] args) {
-        init();
         createDB();
         createTables();
         RSSRead("https://90tv.ir/rss/news");

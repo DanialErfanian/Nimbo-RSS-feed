@@ -62,6 +62,7 @@ public class DPOperationsTest {
         set2.add("id");
         set2.add("Title");
         set2.add("Link");
+        set2.add("NewsText");
         set2.add("Description");
         set2.add("Author");
         set2.add("PublishedDate");
