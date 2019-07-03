@@ -1,10 +1,14 @@
-package nimbo.in;
+package in.nimbo;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import de.l3s.boilerpipe.BoilerpipeProcessingException;
+import de.l3s.boilerpipe.extractors.ArticleExtractor;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.*;
 
@@ -76,6 +80,7 @@ public class DBOperations {
                         "(id int(11) NOT NULL AUTO_INCREMENT, " +
                         "Title TEXT, " +
                         "Link TEXT, " +
+                        "NewsText TEXT , " +
                         "Description TEXT null , " +
                         "Author TEXT, " +
                         "PublishedDate DATE, " +
@@ -116,18 +121,20 @@ public class DBOperations {
             }
 
             System.out.println("Add data in News table...");
+            System.out.println(feed.getEntries().get(0).getLink());
             for (SyndEntry syndEntry : feed.getEntries()) {
                 try {
-                    PreparedStatement pstm = conn.prepareStatement("INSERT INTO News(Title, Link, Description, Author, PublishedDate, RSSLink) VALUES(?, ?, ?, ?, ?, ?)");
+                    PreparedStatement pstm = conn.prepareStatement("INSERT INTO News(Title, Link, NewsText, Description, Author, PublishedDate, RSSLink) VALUES(?, ?, ?, ?, ?, ?, ?)");
                     pstm.setString(1, syndEntry.getTitle());
                     pstm.setString(2, syndEntry.getLink());
+                    pstm.setString(3, extractNewsText(syndEntry.getLink()));
                     if (syndEntry.getDescription() != null)
-                        pstm.setString(3, syndEntry.getDescription().getValue());
+                        pstm.setString(4, syndEntry.getDescription().getValue());
                     else
-                        pstm.setString(3, null);
-                    pstm.setString(4, syndEntry.getAuthor());
-                    pstm.setDate(5, new Date(syndEntry.getPublishedDate().getTime()));
-                    pstm.setInt(6, tableId);
+                        pstm.setString(4, null);
+                    pstm.setString(5, syndEntry.getAuthor());
+                    pstm.setDate(6, new Date(syndEntry.getPublishedDate().getTime()));
+                    pstm.setInt(7, tableId);
                     pstm.executeUpdate();
 
                 } catch (Exception ex) {
@@ -135,22 +142,25 @@ public class DBOperations {
                     System.out.println("ERROR: " + ex.getMessage());
                 }
             }
-            System.out.println("Add data in RSSChannel table finished.");
+            System.out.println("Add data in News table finished.");
         } catch (Exception ex) {
             ex.printStackTrace();
-        } finally {
-            try {
-                if (stmt != null)
-                    conn.close();
-            } catch (SQLException ignored) {
-            }
-            try {
-                if (conn != null)
-                    conn.close();
-            } catch (SQLException se) {
-                se.printStackTrace();
-            }
         }
+    }
+
+    public static String extractNewsText(String link) {
+        String article = null;
+        try {
+            URL url = new URL(link);
+            article = ArticleExtractor.INSTANCE.getText(url);
+            //LOGGER.info("Content extracted successfully ");
+
+        } catch (MalformedURLException e) {
+            //LOGGER.severe("Exception thrown for invalid url " + e);
+        } catch (BoilerpipeProcessingException e) {
+            //LOGGER.severe("Exception thrown during scraping process " + e);
+        }
+        return article;
     }
 
     public static void main(String[] args) {

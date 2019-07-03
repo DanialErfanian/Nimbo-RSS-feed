@@ -1,4 +1,4 @@
-package nimbo.in;
+package in.nimbo;
 
 import org.junit.Assert;
 import org.junit.Test;
