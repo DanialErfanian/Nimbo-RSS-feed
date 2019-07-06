@@ -10,6 +10,10 @@ before_install:
   - sudo mysql_upgrade -u root
   - sudo service mysql restart
 
+env:
+  - CI=true
+
 after_success:
+  - ./gradlew test jacocoTestReport coveralls
   - bash <(curl -s https://codecov.io/bash)
 
