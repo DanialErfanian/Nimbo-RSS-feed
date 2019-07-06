@@ -10,3 +10,6 @@ before_install:
   - sudo mysql_upgrade -u root
   - sudo service mysql restart
 
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
