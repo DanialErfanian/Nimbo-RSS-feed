@@ -8,8 +8,10 @@ import de.l3s.boilerpipe.BoilerpipeProcessingException;
 import de.l3s.boilerpipe.extractors.ArticleExtractor;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -37,10 +39,10 @@ public class DBOperations {
         try {
             Class.forName(JDBC_DRIVER);
 
-            //STEP 3: Open a connection
+            //Open a connection
             conn = DriverManager.getConnection(DB_URL + "?useSsl=false&useUnicode=yes&characterEncoding=UTF-8", USER, PASS);
 
-            //STEP 4: Execute a query
+            //Execute a query
             stmt = conn.createStatement();
             logger.info("Creating DB...");
             String sql = "CREATE DATABASE IF NOT EXISTS " + DB_NAME;
@@ -66,15 +68,14 @@ public class DBOperations {
             try {
                 String sql = "CREATE TABLE IF NOT EXISTS RSSChannel " +
                         "(id int(11) NOT NULL AUTO_INCREMENT, " +
-                        " RSSLink TEXT not NULL, " +
+                        " RSSLink TEXT, " +
                         " Title TEXT, " +
                         " Link TEXT, " +
                         " Description TEXT, " +
-                        " LastBuildDate DATE, " +
+                        " LastBuildDate DATETIME, " +
                         " PRIMARY KEY (id)) ENGINE=InnoDB CHARSET=utf8mb4;";
                 stmt.executeUpdate(sql);
 
-                stmt.executeUpdate("ALTER TABLE `RSSChannel` ADD INDEX(`RSSLink`)");
                 logger.info("RSSChannel table created.");
             } catch (SQLException s) {
                 logger.error("There was a problem on creating RSSChannel table in DB!", s);
@@ -87,9 +88,9 @@ public class DBOperations {
                         "Title TEXT, " +
                         "Link TEXT, " +
                         "NewsText TEXT , " +
-                        "Description TEXT null , " +
+                        "Description TEXT, " +
                         "Author TEXT, " +
-                        "PublishedDate DATE, " +
+                        "PublishedDate DATETIME, " +
                         "RSSLink int(11) NOT NULL, " +
                         "FOREIGN KEY (RSSLink) REFERENCES RSSChannel(id) ON UPDATE CASCADE ON DELETE RESTRICT, " +
                         "PRIMARY KEY (id)" +
@@ -108,124 +109,150 @@ public class DBOperations {
         try {
             logger.info("Add data in RSSChannel table...");
             SyndFeed feed = new SyndFeedInput().build(new XmlReader(new URL(url)));
-            try {
-                Set<String> RSSLinksInTable = new HashSet<>();
-                ResultSet resultSet = conn.createStatement().executeQuery("SELECT RSSLink FROM RSSChannel");
-                while (resultSet.next()) {
-                    RSSLinksInTable.add(resultSet.getString(1));
-                }
-                if (RSSLinksInTable.contains(url)) {
-                    logger.info("URL exist in DB.");
-                    logger.info("Updating URL information...");
-                    PreparedStatement pstm = conn.prepareStatement("UPDATE RSSChannel SET LastBuildDate = ? WHERE RSSLink = ?");
-                    pstm.setDate(1, new Date(feed.getPublishedDate().getTime()));
-                    pstm.setString(2, url);
-                    pstm.executeUpdate();
-                    logger.info("URL information updated.");
-
-                    pstm = conn.prepareStatement("SELECT id FROM RSSChannel WHERE RSSLink = ?");
-                    pstm.setString(1, url);
-                    ResultSet rs = pstm.executeQuery();
-                    if (rs.next()) {
-                        tableId = rs.getInt(1);
-                    }
-                } else {
-                    logger.info("Insert data into RSSChannel table...");
-                    PreparedStatement pstm = conn.prepareStatement("INSERT INTO RSSChannel(RSSLink, Title, Link, Description, LastBuildDate) VALUES(?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
-                    pstm.setString(1, url);
-                    pstm.setString(2, feed.getTitle());
-                    pstm.setString(3, feed.getLink());
-                    pstm.setString(4, feed.getDescription());
-                    pstm.setDate(5, new Date(feed.getPublishedDate().getTime()));
-                    pstm.executeUpdate();
-                    ResultSet rs = pstm.getGeneratedKeys();
-                    if (rs.next()) {
-                        tableId = rs.getInt(1);
-                    }
-                    logger.info("Data inserted into RSSChannel.");
-                }
-            } catch (SQLException s) {
-                logger.error("There was a problem on insert data into RSSChannel table!", s);
-            } catch (Exception e) {
-                System.out.println("ERROR: " + e.getMessage());
+            Set<String> RSSLinksInTable = new HashSet<>();
+            ResultSet resultSet = conn.createStatement().executeQuery("SELECT RSSLink FROM RSSChannel");
+            while (resultSet.next()) {
+                RSSLinksInTable.add(resultSet.getString(1));
+            }
+            if (RSSLinksInTable.contains(url)) {
+                UpdateRSSChannel(feed, url);
+            } else {
+                InsertIntoRSSChannel(feed, url);
             }
 
             logger.info("Add data in News table...");
 
+
             Set<String> newsTitle = new HashSet<>();
-            ResultSet resultSet = conn.createStatement().executeQuery("SELECT Title FROM News");
+            resultSet = conn.createStatement().executeQuery("SELECT Title FROM News");
             while (resultSet.next()) {
                 newsTitle.add(resultSet.getString(1));
             }
-            try {
-                for (SyndEntry syndEntry : feed.getEntries()) {
+            for (SyndEntry syndEntry : feed.getEntries()) {
 
-                    boolean repeatedNews = false;
-                    if (newsTitle.contains(syndEntry.getTitle())) {
-                        logger.info("News exist in News table.");
-                        logger.info("Updating news information...");
-                        /*int id = 0;
-                        PreparedStatement pstm = conn.prepareStatement("SELECT id FROM News WHERE Title = ?");
-                        pstm.setString(1, syndEntry.getTitle());
-                        ResultSet rs = pstm.executeQuery();
-                        if (rs.next()) {
-                            id = rs.getInt(1);
-                        }
-                        if (id == tableId) {*/
-                        repeatedNews = true;
-                        PreparedStatement pstm = conn.prepareStatement("UPDATE News SET Link = ?, NewsText = ?, Description = ?, Author = ?, PublishedDate = ? WHERE Title = ?");
-                        pstm.setString(1, syndEntry.getLink());
-                        pstm.setString(2, extractNewsText(syndEntry.getLink()));
-                        pstm.setString(3, syndEntry.getDescription().getValue());
-                        pstm.setString(4, syndEntry.getAuthor());
-                        pstm.setDate(5, new Date(syndEntry.getPublishedDate().getTime()));
-                        pstm.setString(6, syndEntry.getTitle());
-                        //pstm.setInt(7, tableId);
-                        pstm.executeUpdate();
-                        //}
-                        logger.info("News information updated.");
-                    }
-                    if (!repeatedNews) {
-                        logger.info("Insert data into News table...");
-                        PreparedStatement pstm = conn.prepareStatement("INSERT INTO News(Title, Link, NewsText, Description, Author, PublishedDate, RSSLink) VALUES(?, ?, ?, ?, ?, ?, ?)");
-                        pstm.setString(1, syndEntry.getTitle());
-                        pstm.setString(2, syndEntry.getLink());
-                        pstm.setString(3, extractNewsText(syndEntry.getLink()));
-                        if (syndEntry.getDescription() != null)
-                            pstm.setString(4, syndEntry.getDescription().getValue());
-                        else
-                            pstm.setString(4, null);
-                        pstm.setString(5, syndEntry.getAuthor());
-                        pstm.setDate(6, new Date(syndEntry.getPublishedDate().getTime()));
-                        pstm.setInt(7, tableId);
-                        pstm.executeUpdate();
-                        logger.info("Data inserted into News table.");
-                    }
-
+                if (newsTitle.contains(syndEntry.getTitle())) {
+                    UpdateNewsTable(syndEntry);
+                } else {
+                    InsertIntoNewsTable(syndEntry);
                 }
-            } catch (SQLException s) {
-                logger.error("There was a problem on insert data into News table!", s);
-
-            } catch (Exception e) {
-                System.out.println("ERROR: " + e.getMessage());
             }
         } catch (Exception e) {
             logger.error("There was a problem on loading URL", e);
         }
+
     }
 
-    public static String extractNewsText(String link) {
+    private static void UpdateRSSChannel(SyndFeed feed, String url) {
+        try {
+            logger.info("URL exist in DB.");
+            logger.info("Updating URL information...");
+            PreparedStatement pstm = conn.prepareStatement("UPDATE RSSChannel SET LastBuildDate = ? WHERE RSSLink = ?");
+            pstm.setTimestamp(1, new Timestamp(feed.getPublishedDate().getTime()));
+            pstm.setString(2, url);
+            pstm.executeUpdate();
+            logger.info("URL information updated.");
+
+            pstm = conn.prepareStatement("SELECT id FROM RSSChannel WHERE RSSLink = ?");
+            pstm.setString(1, url);
+            ResultSet rs = pstm.executeQuery();
+            if (rs.next()) {
+                tableId = rs.getInt(1);
+            }
+        } catch (SQLException s) {
+            logger.error("There was a problem on update RSSChannel table!", s);
+        } catch (Exception e) {
+            logger.error("ERROR: ", e);
+        }
+    }
+
+    private static void InsertIntoRSSChannel(SyndFeed feed, String url) {
+        try {
+            logger.info("Insert data into RSSChannel table...");
+            PreparedStatement pstm = conn.prepareStatement("INSERT INTO RSSChannel(RSSLink, Title, Link, Description, LastBuildDate) VALUES(?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            pstm.setString(1, url);
+            pstm.setString(2, feed.getTitle());
+            pstm.setString(3, feed.getLink());
+            pstm.setString(4, feed.getDescription());
+            pstm.setTimestamp(5, new Timestamp(feed.getPublishedDate().getTime()));
+            pstm.executeUpdate();
+            ResultSet rs = pstm.getGeneratedKeys();
+            if (rs.next()) {
+                tableId = rs.getInt(1);
+            }
+            logger.info("Data inserted into RSSChannel.");
+        } catch (SQLException s) {
+            logger.error("There was a problem on insert data into RSSChannel table!", s);
+        } catch (Exception e) {
+            logger.error("ERROR: ", e);
+        }
+    }
+
+    private static void UpdateNewsTable(SyndEntry syndEntry) {
+        try {
+            logger.info("News exist in News table.");
+            logger.info("Updating news information...");
+            PreparedStatement pstm = conn.prepareStatement("UPDATE News SET Link = ?, NewsText = ?, Description = ?, Author = ?, PublishedDate = ? WHERE Title = ?");
+            pstm.setString(1, syndEntry.getLink());
+            pstm.setString(2, extractNewsText(syndEntry.getLink()));
+            if (syndEntry.getDescription() != null)
+                pstm.setString(3, syndEntry.getDescription().getValue());
+            else
+                pstm.setString(3, null);
+            pstm.setString(4, syndEntry.getAuthor());
+            pstm.setTimestamp(5, new Timestamp(syndEntry.getPublishedDate().getTime()));
+            pstm.setString(6, syndEntry.getTitle());
+            pstm.executeUpdate();
+            logger.info("News information updated.");
+        } catch (SQLException s) {
+            logger.error("There was a problem on update News table!", s);
+        } catch (Exception e) {
+            logger.error("ERROR: ", e);
+        }
+    }
+
+    private static void InsertIntoNewsTable(SyndEntry syndEntry) {
+        try {
+            logger.info("Insert data into News table...");
+            PreparedStatement pstm = conn.prepareStatement("INSERT INTO News(Title, Link, NewsText, Description, Author, PublishedDate, RSSLink) VALUES(?, ?, ?, ?, ?, ?, ?)");
+            pstm.setString(1, syndEntry.getTitle());
+            pstm.setString(2, syndEntry.getLink());
+            pstm.setString(3, extractNewsText(syndEntry.getLink()));
+            if (syndEntry.getDescription() != null)
+                pstm.setString(4, syndEntry.getDescription().getValue());
+            else
+                pstm.setString(4, null);
+            pstm.setString(5, syndEntry.getAuthor());
+            pstm.setTimestamp(6, new Timestamp(syndEntry.getPublishedDate().getTime()));
+            pstm.setInt(7, tableId);
+            pstm.executeUpdate();
+            logger.info("Data inserted into News table.");
+        } catch (SQLException s) {
+            logger.error("There was a problem on insert data into News table!", s);
+        } catch (Exception e) {
+            logger.error("ERROR: ", e);
+        }
+    }
+
+    private static String extractNewsText(String link) throws UnsupportedEncodingException {
         String article = null;
         try {
             logger.info("Extracting news text...");
-            URL url = new URL(link);
+            String encode;
+            if (!link.contains("%")) {
+                int index = link.lastIndexOf('/') + 1;
+                encode = link.substring(0, index) + URLEncoder.encode(link.substring(index), "UTF-8");
+            }
+            else {
+                encode = link;
+            }
+            URL url = new URL(encode);
             article = ArticleExtractor.INSTANCE.getText(url);
             logger.info("News text extracted successfully.");
 
         } catch (MalformedURLException e) {
-            logger.error("Exception thrown for invalid url!" + e);
+            logger.error("Exception thrown for invalid url!", e);
         } catch (BoilerpipeProcessingException e) {
-            logger.error("Exception thrown during scraping process!" + e);
+            logger.error("Exception thrown during scraping process!", e);
         }
         return article;
     }
@@ -234,6 +261,6 @@ public class DBOperations {
         createDB();
         createTables();
         RSSRead("https://90tv.ir/rss/news");
-        //RSSRead("https://www.tabnak.ir/fa/rss/1");
+        RSSRead("https://www.tabnak.ir/fa/rss/1");
     }
 }
