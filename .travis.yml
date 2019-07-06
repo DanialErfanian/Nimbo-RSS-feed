@@ -10,10 +10,9 @@ before_install:
   - sudo mysql_upgrade -u root
   - sudo service mysql restart
 
-env:
-  - CI=true
+script:
+  - mvn clean package
+  - mvn cobertura:cobertura
 
 after_success:
-  - ./gradlew test jacocoTestReport coveralls
   - bash <(curl -s https://codecov.io/bash)
-
