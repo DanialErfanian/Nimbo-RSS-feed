@@ -14,8 +14,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 class DBOperations {
     // JDBC driver name and database URL
@@ -106,21 +104,14 @@ class DBOperations {
         try {
             logger.info("Add data in RSSChannel table...");
             SyndFeed feed = new SyndFeedInput().build(new XmlReader(new URL(url)));
-            ResultSet resultSet = conn.createStatement().executeQuery("SELECT COUNT(*) FROM RSSChannel WHERE RSSLink = '" + url + "'");// TODO use prepareStatement
             int tableID;
-            resultSet.next();
-            if (resultSet.getInt(1) > 0)
-                tableID = updateRSSChannel(feed, url);
-            else
+            if (isNewChannel(url))
                 tableID = insertIntoRSSChannel(feed, url);
-
+            else
+                tableID = updateRSSChannel(feed, url);
             logger.info("Add data in News table...");
-            Set<String> newsTitle = new HashSet<>();
-            resultSet = conn.createStatement().executeQuery("SELECT Title FROM News");// TODO use DB search
-            while (resultSet.next())
-                newsTitle.add(resultSet.getString(1));
             for (SyndEntry syndEntry : feed.getEntries())
-                if (newsTitle.contains(syndEntry.getTitle()))
+                if (isInNewsTable(syndEntry))
                     updateNewsTable(syndEntry);
                 else
                     insertIntoNewsTable(syndEntry, tableID);
@@ -129,10 +120,27 @@ class DBOperations {
         }
     }
 
+    private static boolean isNewChannel(String url) throws SQLException {
+        PreparedStatement statement = conn.prepareStatement("SELECT COUNT(*) FROM RSSChannel WHERE RSSLink = ?");
+        statement.setString(1, url);
+        ResultSet resultSet = statement.executeQuery();
+        resultSet.next();
+        return resultSet.getInt(1) == 0;
+    }
+
+    private static boolean isInNewsTable(SyndEntry syndEntry) throws SQLException {
+        PreparedStatement statement = conn.prepareStatement("SELECT COUNT(*) FROM News WHERE Link = ?");
+        statement.setString(1, syndEntry.getLink());
+        ResultSet resultSet = statement.executeQuery();
+        resultSet.next();
+        return resultSet.getInt(1) == 0;
+
+    }
+
     private static int getChannelID(String url) throws SQLException {
-        PreparedStatement pstm = conn.prepareStatement("SELECT id FROM RSSChannel WHERE RSSLink = ?");
-        pstm.setString(1, url);
-        ResultSet rs = pstm.executeQuery();
+        PreparedStatement statement = conn.prepareStatement("SELECT id FROM RSSChannel WHERE RSSLink = ?");
+        statement.setString(1, url);
+        ResultSet rs = statement.executeQuery();
         if (rs.next())
             return rs.getInt(1);
         logger.error("this line must be unreachable");
@@ -143,10 +151,10 @@ class DBOperations {
         try {
             logger.info("URL exist in DB.");
             logger.info("Updating URL information...");
-            PreparedStatement pstm = conn.prepareStatement("UPDATE RSSChannel SET LastBuildDate = ? WHERE RSSLink = ?");
-            pstm.setTimestamp(1, new Timestamp(feed.getPublishedDate().getTime()));
-            pstm.setString(2, url);
-            pstm.executeUpdate();
+            PreparedStatement statement = conn.prepareStatement("UPDATE RSSChannel SET LastBuildDate = ? WHERE RSSLink = ?");
+            statement.setTimestamp(1, new Timestamp(feed.getPublishedDate().getTime()));
+            statement.setString(2, url);
+            statement.executeUpdate();
             logger.info("URL information updated.");
             return getChannelID(url);
         } catch (SQLException s) {
@@ -161,14 +169,14 @@ class DBOperations {
     private static int insertIntoRSSChannel(SyndFeed feed, String url) {
         try {
             logger.info("Insert data into RSSChannel table...");
-            PreparedStatement pstm = conn.prepareStatement("INSERT INTO RSSChannel(RSSLink, Title, Link, Description, LastBuildDate) VALUES(?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
-            pstm.setString(1, url);
-            pstm.setString(2, feed.getTitle());
-            pstm.setString(3, feed.getLink());
-            pstm.setString(4, feed.getDescription());
-            pstm.setTimestamp(5, new Timestamp(feed.getPublishedDate().getTime()));
-            pstm.executeUpdate();
-            ResultSet rs = pstm.getGeneratedKeys();
+            PreparedStatement statement = conn.prepareStatement("INSERT INTO RSSChannel(RSSLink, Title, Link, Description, LastBuildDate) VALUES(?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, url);
+            statement.setString(2, feed.getTitle());
+            statement.setString(3, feed.getLink());
+            statement.setString(4, feed.getDescription());
+            statement.setTimestamp(5, new Timestamp(feed.getPublishedDate().getTime()));
+            statement.executeUpdate();
+            ResultSet rs = statement.getGeneratedKeys();
             if (rs.next())
                 return rs.getInt(1);
             logger.info("Data inserted into RSSChannel.");
@@ -203,14 +211,14 @@ class DBOperations {
     private static void insertIntoNewsTable(SyndEntry syndEntry, int tableID) {
         try {
             logger.info("Insert data into News table...");
-            PreparedStatement pstm = conn.prepareStatement("INSERT INTO News(Title, Link, Description, Author, PublishedDate, RSSLink) VALUES(?, ?, ?, ?, ?, ?)");
-            pstm.setString(1, syndEntry.getTitle());
-            pstm.setString(2, syndEntry.getLink());
-            pstm.setString(3, extractNewsText(syndEntry.getLink()));
-            pstm.setString(4, syndEntry.getAuthor());
-            pstm.setTimestamp(5, new Timestamp(syndEntry.getPublishedDate().getTime()));
-            pstm.setInt(6, tableID);
-            pstm.executeUpdate();
+            PreparedStatement statement = conn.prepareStatement("INSERT INTO News(Title, Link, Description, Author, PublishedDate, RSSLink) VALUES(?, ?, ?, ?, ?, ?)");
+            statement.setString(1, syndEntry.getTitle());
+            statement.setString(2, syndEntry.getLink());
+            statement.setString(3, extractNewsText(syndEntry.getLink()));
+            statement.setString(4, syndEntry.getAuthor());
+            statement.setTimestamp(5, new Timestamp(syndEntry.getPublishedDate().getTime()));
+            statement.setInt(6, tableID);
+            statement.executeUpdate();
             logger.info("Data inserted into News table.");
         } catch (SQLException s) {
             logger.error("There was a problem on insert data into News table!", s);
@@ -267,8 +275,6 @@ class DBOperations {
         ArrayList<SyndEntry> list = new ArrayList<>();
         while (resultSet.next()) {
             SyndEntry syndEntry = new SyndEntryImpl();
-
-            //syndEntry.;
             syndEntry.setLink(resultSet.getString("Link"));
             syndEntry.setTitle(resultSet.getString("Title"));
             SyndContent content = new SyndContentImpl();

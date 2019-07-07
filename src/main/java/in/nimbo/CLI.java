@@ -1,7 +1,6 @@
 package in.nimbo;
 
 import com.rometools.rome.feed.synd.SyndEntry;
-import com.rometools.rome.feed.synd.SyndFeed;
 
 import java.util.Scanner;
 
@@ -12,12 +11,12 @@ public class CLI {
     }
 
     private static void searchTitle(String title) { // print the result
-        for (SyndEntry entry: DBOperations.searchTitle(title))
+        for (SyndEntry entry : DBOperations.searchTitle(title))
             System.out.println(entry.getDescription().getValue());
     }
 
     private static void search(String s) { // print the result
-        for (SyndEntry entry: DBOperations.search(s))
+        for (SyndEntry entry : DBOperations.search(s))
             System.out.println(entry.getDescription().getValue());
     }
 
@@ -27,9 +26,9 @@ public class CLI {
         System.out.println("<2 title> for search on titles in you extracted news");
         System.out.println("<3 s> for search in you extracted news");
         System.out.println("<4> for exit");
-        int type = scanner.nextInt();
-        String s = scanner.nextLine();
         while (true) {
+            int type = scanner.nextInt();
+            String s = scanner.nextLine();
             if (type == 1)
                 addLink(s);
             else if (type == 2)
