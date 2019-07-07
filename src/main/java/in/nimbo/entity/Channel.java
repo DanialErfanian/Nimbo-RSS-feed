@@ -4,17 +4,19 @@ import java.util.Date;
 
 public class Channel {
     private int id;
+    private String title;
     private String RSSUrl;
     private String link;
     private Date lastUpdate;
     private String description;
 
-    public Channel(int id, String RSSUrl, String link, Date lastUpdate, String description) {
+    public Channel(int id, String RSSUrl, String link, Date lastUpdate, String description, String title) {
         this.id = id;
         this.RSSUrl = RSSUrl;
         this.link = link;
         this.lastUpdate = lastUpdate;
         this.description = description;
+        this.title = title;
     }
 
     public Channel() {
@@ -59,5 +61,13 @@ public class Channel {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 }

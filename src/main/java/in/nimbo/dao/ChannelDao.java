@@ -7,7 +7,7 @@ public interface ChannelDao {
 
     Channel getChannel(int id);
 
-    void update(Channel Channel);
+    boolean update(Channel channel);
 
-    void add(Channel Channel);
+    boolean add(Channel channel);
 }
