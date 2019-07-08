@@ -1,6 +1,7 @@
 package in.nimbo.entity;
 
 import java.sql.Timestamp;
+import java.util.Objects;
 
 public class Channel {
     private int id;
@@ -77,11 +78,11 @@ public class Channel {
             return false;
         Channel channel = (Channel) obj;
         return this.id == channel.id &&
-                this.title.equals(channel.title) &&
-                this.RSSUrl.equals(channel.RSSUrl) &&
-                this.link.equals(channel.link) &&
-                this.lastUpdate.equals(channel.lastUpdate) &&
-                this.description.equals(channel.description);
+                Objects.equals(this.title, channel.title) &&
+                Objects.equals(this.RSSUrl, channel.RSSUrl) &&
+                Objects.equals(this.link, channel.link) &&
+                Objects.equals(this.lastUpdate, channel.lastUpdate) &&
+                Objects.equals(this.description, channel.description);
     }
 
     @Override
