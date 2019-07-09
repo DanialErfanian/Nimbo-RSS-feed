@@ -8,7 +8,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-class TestDataSource {
+public class TestDataSource {
     private static final String JDBC_DRIVER = "org.h2.Driver";
     private static final String DB_URL = "jdbc:h2:mem:default";
 
@@ -18,7 +18,7 @@ class TestDataSource {
 
     static private Connection connection;
 
-    static DataSource init() throws SQLException, ClassNotFoundException, IOException {
+    public static DataSource init() throws SQLException, ClassNotFoundException, IOException {
         Class.forName(JDBC_DRIVER);
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL(DB_URL);

@@ -1,9 +1,9 @@
 package in.nimbo;
 
-import com.rometools.rome.feed.synd.SyndEntry;
 import de.l3s.boilerpipe.BoilerpipeProcessingException;
 import de.l3s.boilerpipe.extractors.ArticleExtractor;
-import in.nimbo.entity.News;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -11,10 +11,13 @@ import java.net.URL;
 import java.net.URLEncoder;
 
 public class Utility {
+    private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
+
+
     public static String extraxtText(String link){
         String article = null;
         try {
-            //logger.info("Extracting news text...");
+            LOGGER.info("Extracting news text...");
             String encode;
             if (!link.contains("%")) {
                 int index = link.lastIndexOf('/') + 1;
@@ -24,13 +27,13 @@ public class Utility {
             }
             URL url = new URL(encode);
             article = ArticleExtractor.INSTANCE.getText(url);
-            //logger.info("News text extracted successfully.");
+            LOGGER.info("News text extracted successfully.");
         } catch (MalformedURLException e) {
-            //logger.error("Exception thrown for invalid url!", e);
+            LOGGER.error("Exception thrown for invalid url!", e);
         } catch (BoilerpipeProcessingException e) {
-            //logger.error("Exception thrown during scraping process!", e);
+            LOGGER.error("Exception thrown during scraping process!", e);
         } catch (UnsupportedEncodingException e) {
-            //logger.error("Exception thrown for invalid encode!", e);
+            LOGGER.error("Exception thrown for invalid encode!", e);
         }
         return article;
     }

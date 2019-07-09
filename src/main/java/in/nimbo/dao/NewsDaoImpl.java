@@ -5,11 +5,9 @@ import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndContentImpl;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndEntryImpl;
-import in.nimbo.Utility;
 import in.nimbo.entity.News;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +18,7 @@ import java.util.List;
 import java.util.Properties;
 
 public class NewsDaoImpl implements NewsDao {
-    private static final Logger logger = LoggerFactory.getLogger(NewsDao.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NewsDao.class);
     private final DataSource source;
 
     public NewsDaoImpl(DataSource source) {
@@ -49,28 +47,35 @@ public class NewsDaoImpl implements NewsDao {
     public News[] search(FilterNews filter) {
         String sqlCommand = "SELECT  * FROM News WHERE ";
         ResultSet resultSet = null;
-        if (filter.getChannel() != null) {
-            sqlCommand += "RSSLink = " + filter.getChannel().getId();
+        if (filter == null || filter.isEmpty()) {
+            sqlCommand = "SELECT * FROM News    ";
         }
-        if (filter.getTitle() != null) {
-            sqlCommand += "Title LIKE '%" + filter.getTitle() + "%' AND ";
+        else {
+            if (filter.getChannel() != null) {
+                sqlCommand += "RSSLink = " + filter.getChannel().getId();
+            }
+            if (filter.getTitle() != null) {
+                sqlCommand += "Title LIKE '%" + filter.getTitle() + "%' AND ";
+            }
+            if (filter.getText() != null) {
+                sqlCommand += "NewsText LIKE '%" + filter.getText() + "%' AND ";
+            }
+            if (filter.getStart() != null) {
+                sqlCommand += "PublishedDate >= '" + new Timestamp(filter.getStart().getTime()) + "' AND ";
+            }
+            if (filter.getEnd() != null) {
+                sqlCommand += "PublishedDate <= '" + new Timestamp(filter.getEnd().getTime()) + "' AND ";
+            }
         }
-        if (filter.getText() != null) {
-            sqlCommand += "NewsText LIKE '%" + filter.getText() + "%' AND ";
-        }
-        if (filter.getStart() != null) {
-            sqlCommand += "PublishedDate >= '" + new Timestamp(filter.getStart().getTime()) + "' AND";
-        }
-        if (filter.getEnd() != null) {
-            sqlCommand += "PublishedDate <= '" + new Timestamp(filter.getEnd().getTime()) + "' AND";
-        }
+        News[] news = null;
         try (Connection conn = source.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement("SELECT * FROM News WHERE Link = ?");
+            PreparedStatement ps = conn.prepareStatement(sqlCommand.substring(0, sqlCommand.length() - 4));
             resultSet = ps.executeQuery();
+            news = convert(resultSet);
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return convert(resultSet);
+        return news;
     }
 
     private News[] convert(ResultSet resultSet) {
@@ -90,6 +95,7 @@ public class NewsDaoImpl implements NewsDao {
                 news.setText(resultSet.getString("NewsText"));
                 newsList.add(news);
             }
+            return newsList.toArray(new News[0]);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -106,7 +112,7 @@ public class NewsDaoImpl implements NewsDao {
             ResultSet resultSet = ps.executeQuery();
             if (resultSet.next()) {
                 syndEntry.setTitle(resultSet.getString("Title"));
-                syndEntry.setLink(resultSet.getString("Link"));
+                syndEntry.setLink(url);
                 text = resultSet.getString("NewsText");
                 SyndContent description = new SyndContentImpl();
                 description.setValue(resultSet.getString("Description"));
@@ -116,9 +122,9 @@ public class NewsDaoImpl implements NewsDao {
                 return new News(syndEntry, text);
             }
         } catch (SQLException s) {
-            logger.error("There was a problem on update News table!", s);
+            LOGGER.error("There was a problem on update News table!", s);
         } catch (Exception e) {
-            logger.error("ERROR: ", e);
+            LOGGER.error("ERROR: ", e);
         }
         return null;
     }
@@ -126,48 +132,54 @@ public class NewsDaoImpl implements NewsDao {
     @Override
     public void update(News news) {
         try (Connection conn = source.getConnection()) {
-            logger.info("News exist in News table.");
-            logger.info("Updating news information...");
-            PreparedStatement ps = conn.prepareStatement("UPDATE News SET Link = ?, NewsText = ?, Description = ?, Author = ?, PublishedDate = ? WHERE Title = ?");
-            ps.setString(1, news.getEntry().getLink());
-            ps.setString(2, Utility.extraxtText(news.getEntry().getLink()));
+            LOGGER.info("News exist in News table.");
+            LOGGER.info("Updating news information...");
+            PreparedStatement ps = conn.prepareStatement("UPDATE News SET Title = ?, NewsText = ?, Description = ?, Author = ?, PublishedDate = ? WHERE Link = ?");
+            ps.setString(1, news.getEntry().getTitle());
+            ps.setString(2, news.getText());
             if (news.getEntry().getDescription() != null)
                 ps.setString(3, news.getEntry().getDescription().getValue());
             else
                 ps.setString(3, null);
             ps.setString(4, news.getEntry().getAuthor());
-            ps.setTimestamp(5, new Timestamp(news.getEntry().getPublishedDate().getTime()));
-            ps.setString(6, news.getEntry().getTitle());
+            if (news.getEntry().getPublishedDate() != null)
+                ps.setTimestamp(5, new Timestamp(news.getEntry().getPublishedDate().getTime()));
+            else
+                ps.setTimestamp(5, null);
+            ps.setString(6, news.getEntry().getLink());
             ps.executeUpdate();
-            logger.info("News information updated.");
+            LOGGER.info("News information updated.");
         } catch (SQLException s) {
-            logger.error("There was a problem on update News table!", s);
+            LOGGER.error("There was a problem on update News table!", s);
         } catch (Exception e) {
-            logger.error("ERROR: ", e);
+            LOGGER.error("ERROR: ", e);
         }
     }
 
     @Override
     public void add(News news) {
         try (Connection conn = source.getConnection()) {
-            logger.info("Insert data into News table...");
+            LOGGER.info("Insert data into News table...");
             PreparedStatement ps = conn.prepareStatement("INSERT INTO News(Title, Link, NewsText, Description, Author, PublishedDate, RSSLink) VALUES(?, ?, ?, ?, ?, ?, ?)");
             ps.setString(1, news.getEntry().getTitle());
             ps.setString(2, news.getEntry().getLink());
-            ps.setString(3, Utility.extraxtText(news.getEntry().getLink()));
+            ps.setString(3, news.getText());
             if (news.getEntry().getDescription() != null)
                 ps.setString(4, news.getEntry().getDescription().getValue());
             else
                 ps.setString(4, null);
             ps.setString(5, news.getEntry().getAuthor());
-            ps.setTimestamp(6, new Timestamp(news.getEntry().getPublishedDate().getTime()));
+            if (news.getEntry().getPublishedDate() != null)
+                ps.setTimestamp(6, new Timestamp(news.getEntry().getPublishedDate().getTime()));
+            else
+                ps.setTimestamp(6, null);
             ps.setInt(7, news.getId());
             ps.executeUpdate();
-            logger.info("Data inserted into News table.");
+            LOGGER.info("Data inserted into News table.");
         } catch (SQLException s) {
-            logger.error("There was a problem on insert data into News table!", s);
+            LOGGER.error("There was a problem on insert data into News table!", s);
         } catch (Exception e) {
-            logger.error("ERROR: ", e);
+            LOGGER.error("ERROR: ", e);
         }
     }
 }

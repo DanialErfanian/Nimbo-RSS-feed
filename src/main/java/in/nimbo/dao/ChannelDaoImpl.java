@@ -16,7 +16,7 @@ import java.util.Properties;
 
 public class ChannelDaoImpl implements ChannelDao {
 
-    private static final Logger logger = LoggerFactory.getLogger(ChannelDaoImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChannelDaoImpl.class);
     private final DataSource source;
 
     public ChannelDaoImpl(DataSource source) {
@@ -85,7 +85,7 @@ public class ChannelDaoImpl implements ChannelDao {
                 channel = toChannel(resultSet);
             connection.close();
         } catch (SQLException e) {
-            logger.error("Error in converting resultSet to Channel Object ", e);
+            LOGGER.error("Error in converting resultSet to Channel Object ", e);
         }
         return channel;
     }
@@ -119,7 +119,7 @@ public class ChannelDaoImpl implements ChannelDao {
             res = runQuery(statement, channel);
             connection.close();
         } catch (SQLException e) {
-            logger.error("Error in update a row of RSSChannel table", e);
+            LOGGER.error("Error in update a row of RSSChannel table", e);
         }
         return res;
     }
@@ -143,7 +143,7 @@ public class ChannelDaoImpl implements ChannelDao {
             res = runQuery(statement, channel);
             connection.close();
         } catch (SQLException e) {
-            logger.error("Error in insert into RSSChannel table", e);
+            LOGGER.error("Error in insert into RSSChannel table", e);
         }
         return res;
     }

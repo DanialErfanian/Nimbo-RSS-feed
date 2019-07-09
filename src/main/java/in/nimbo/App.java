@@ -1,5 +1,6 @@
 package in.nimbo;
 
+import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
@@ -15,7 +16,7 @@ import java.net.URL;
 import java.sql.Timestamp;
 
 public class App {
-    private final Logger logger = LoggerFactory.getLogger(App.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
     private NewsDao newsDao;
     private ChannelDao channelDao;
 
@@ -35,12 +36,24 @@ public class App {
             channel.setTitle(feed.getTitle());
             channel.setLastUpdate(new Timestamp(feed.getPublishedDate().getTime()));
         } catch (Exception e) {
-            logger.error("There was a problem on loading URL", e);
+            LOGGER.error("There was a problem on loading URL", e);
         }
         if (channelDao.getChannel(url) == null) {
             channelDao.add(channel);
         } else {
             channelDao.update(channel);
+        }
+        for (SyndEntry s: feed.getEntries()) {
+            News news = new News();
+            news.setEntry(s);
+            news.setText(Utility.extraxtText(s.getLink()));
+            news.setId(channelDao.getChannel(url).getId());
+            if(newsDao.getNews(s.getLink()) == null) {
+                newsDao.add(news);
+            }
+            else {
+                newsDao.update(news);
+            }
         }
     }
 

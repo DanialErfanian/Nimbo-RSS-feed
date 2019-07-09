@@ -1,5 +1,6 @@
-package in.nimbo;
+package in.nimbo.dao;
 
+import in.nimbo.TestDataSource;
 import in.nimbo.dao.ChannelDao;
 import in.nimbo.dao.ChannelDaoImpl;
 import in.nimbo.entity.Channel;
@@ -32,8 +33,8 @@ public class ChannelDaoImplTest {
 
     @Before
     public void clearDB() throws SQLException {
-        connection.createStatement().executeUpdate("DELETE FROM RSSChannel");
         connection.createStatement().executeUpdate("DELETE FROM News");
+        connection.createStatement().executeUpdate("DELETE FROM RSSChannel");
         connection.createStatement().execute("ALTER TABLE News ALTER COLUMN id RESTART WITH 1");
         connection.createStatement().execute("ALTER TABLE RSSChannel ALTER COLUMN id RESTART WITH 1");
     }
