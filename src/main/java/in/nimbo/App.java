@@ -64,7 +64,7 @@ public class App {
         return channelDao.getChannel(url);
     }
 
-    public List<Channel> getAllChannels(int id) {
+    public List<Channel> getAllChannels() {
         return channelDao.getAllChannels();
     }
 }

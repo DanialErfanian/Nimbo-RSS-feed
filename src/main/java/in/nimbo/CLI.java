@@ -14,11 +14,21 @@ public class CLI {
             "news <filter> to get news with given filter:\n" +
             "news -channel tabnak.ir/rss -title باخت پرسپلیس";
 
+    private String getStatus() {
+        return String.format("We have %d RSSChannels. and %d news.",
+                app.getAllChannels().size(),
+                app.getNews(new FilterNews()).length);
+    }
+
     private String handle(String line) {
-        if (line.trim().length() == 0)
+        line = line.trim();
+        if (line.length() == 0)
             return "";
         if (line.equals("help")) {
             return help;
+        }
+        if (line.equals("status")) {
+            return getStatus();
         }
         String[] split = line.split("\\s+");
         String type = split[0];

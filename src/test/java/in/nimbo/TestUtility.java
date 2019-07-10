@@ -66,11 +66,13 @@ public class TestUtility {
 
         Date start = new Date();
         filter.setStart(new Timestamp(formatter.parse(formatter.format(start)).getTime()));
+        Assert.assertNull(parseNewsFilter(args + " -start some wrong date", app));
         args += " -start " + formatter.format(start);
         Assert.assertEquals(parseNewsFilter(args, app), filter);
 
         Date end = new Date();
         filter.setEnd(new Timestamp(formatter.parse(formatter.format(end)).getTime()));
+        Assert.assertNull(parseNewsFilter(args + " -end some wrong date", app));
         args += " -end " + formatter.format(end);
         Assert.assertEquals(parseNewsFilter(args, app), filter);
 
@@ -79,6 +81,7 @@ public class TestUtility {
 
         channel.setId(1);
         filter.setChannel(channel);
+        Assert.assertNull(parseNewsFilter(args + " -channel " + "some wrong url", app));
         args += " -channel " + channel.getRSSUrl();
         Assert.assertEquals(parseNewsFilter(args, app), filter);
         Assert.assertEquals(Objects.requireNonNull(parseNewsFilter(args, app)).toString(), filter.toString());
@@ -99,6 +102,7 @@ public class TestUtility {
         Assert.assertEquals(channel.getTitle(), syndFeed.getTitle());
         Assert.assertEquals(channel.getDescription(), syndFeed.getDescription());
         Assert.assertEquals(channel.getLastUpdate(), new Timestamp(syndFeed.getPublishedDate().getTime()));
+
     }
 
     @Test
