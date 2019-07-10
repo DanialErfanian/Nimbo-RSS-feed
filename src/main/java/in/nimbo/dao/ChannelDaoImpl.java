@@ -30,11 +30,11 @@ public class ChannelDaoImpl implements ChannelDao {
         try {
             fis = new FileInputStream(new File("src/main/resources/db.properties"));
             props.load(fis);
-            Class.forName(props.getProperty("MYSQL_DB_DRIVER_CLASS"));
+            Class.forName(props.getProperty("db.mysql.driver_class"));
             mysqlDS = new MysqlDataSource();
-            mysqlDS.setURL(props.getProperty("MYSQL_DB_URL"));
-            mysqlDS.setUser(props.getProperty("MYSQL_DB_USERNAME"));
-            mysqlDS.setPassword(props.getProperty("MYSQL_DB_PASSWORD"));
+            mysqlDS.setURL(props.getProperty("db.mysql.url"));
+            mysqlDS.setUser(props.getProperty("db.mysql.username"));
+            mysqlDS.setPassword(props.getProperty("db.mysql.password"));
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }

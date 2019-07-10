@@ -1,42 +1,51 @@
 package in.nimbo;
 
-import com.rometools.rome.feed.synd.SyndEntry;
+import in.nimbo.dao.ChannelDaoImpl;
+import in.nimbo.dao.FilterNews;
+import in.nimbo.dao.NewsDaoImpl;
+import in.nimbo.entity.News;
 
 import java.util.Scanner;
 
 public class CLI {
-    private static void addLink(String url) { // add or update
-        DBOperations.RSSRead(url);
-        System.out.println("done.");
-    }
+    private static final String INVALID_INPUT = "Invalid Input";
+    private App app = new App(new NewsDaoImpl(), new ChannelDaoImpl());
+    private static final String help = "add <link> for add a channel" +
+            "news <filter> to get news with given filter:" +
+            "filter " +
+            "news -channel tabnak.ir/rss -title باخت پرسپلیس";
 
-    private static void searchTitle(String title) { // print the result
-        for (SyndEntry entry : DBOperations.searchTitle(title))
-            System.out.println(entry.getDescription().getValue());
-    }
-
-    private static void search(String s) { // print the result
-        for (SyndEntry entry : DBOperations.search(s))
-            System.out.println(entry.getDescription().getValue());
+    private String handle(String line) {
+        if (line.equals("help")) {
+            return help;
+        }
+        String[] split = line.split("\\s+");
+        String type = split[0];
+        if (!type.matches("add|news")) {
+            return INVALID_INPUT;
+        }
+        if (type.equals("add")) {
+            app.addLink(line.substring(type.length() + 1));
+            return "Link added successfully";
+        } else if (type.equals("news")) {
+            FilterNews filter = Utility.parseNewsFilter(line.substring(type.length() + 1), app);
+            if (filter == null)
+                return INVALID_INPUT;
+            else {
+                News[] filteredNews = app.getNews(filter);
+                StringBuilder s = new StringBuilder("News found.");
+                for (News news : filteredNews)
+                    s.append(news);
+                return s.toString();
+            }
+        } else
+            return INVALID_INPUT;
     }
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("<1 link> for add a link to you links");
-        System.out.println("<2 title> for search on titles in you extracted news");
-        System.out.println("<3 s> for search in you extracted news");
-        System.out.println("<4> for exit");
-        while (true) {
-            int type = scanner.nextInt();
-            String s = scanner.nextLine();
-            if (type == 1)
-                addLink(s);
-            else if (type == 2)
-                searchTitle(s);
-            else if (type == 3)
-                search(s);
-            else
-                break;
-        }
+        CLI cli = new CLI();
+        while (scanner.hasNextLine())
+            System.out.println(cli.handle(scanner.nextLine()));
     }
 }

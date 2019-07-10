@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.sql.Timestamp;
+import java.util.List;
 
 public class App {
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
@@ -43,15 +44,14 @@ public class App {
         } else {
             channelDao.update(channel);
         }
-        for (SyndEntry s: feed.getEntries()) {
+        for (SyndEntry s : feed.getEntries()) {
             News news = new News();
             news.setEntry(s);
-            news.setText(Utility.extraxtText(s.getLink()));
+            news.setText(Utility.extractText(s.getLink()));
             news.setId(channelDao.getChannel(url).getId());
-            if(newsDao.getNews(s.getLink()) == null) {
+            if (newsDao.getNews(s.getLink()) == null) {
                 newsDao.add(news);
-            }
-            else {
+            } else {
                 newsDao.update(news);
             }
         }
@@ -59,5 +59,17 @@ public class App {
 
     public News[] getNews(FilterNews filter) {
         return newsDao.search(filter);
+    }
+
+    public Channel getChannel(int id) {
+        return channelDao.getChannel(id);
+    }
+
+    public Channel getChannel(String url) {
+        return channelDao.getChannel(url);
+    }
+
+    public List<Channel> getAllChannels(int id) {
+        return channelDao.getAllChannels();
     }
 }

@@ -3,7 +3,6 @@ package in.nimbo.dao;
 import in.nimbo.entity.Channel;
 
 import java.sql.Timestamp;
-import java.util.Date;
 
 public class FilterNews {
     private Timestamp start, end;

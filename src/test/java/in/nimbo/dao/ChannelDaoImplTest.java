@@ -93,7 +93,7 @@ public class ChannelDaoImplTest {
         channelOrg.setId(1);
         channelOrg.setRSSUrl("http://google.com");
         channelOrg.setLink("google.com");
-        channelOrg.setLastUpdate(new Timestamp(new Date().getTime()));
+        channelOrg.setLastUpdate(channel1.getLastUpdate());
         channelOrg.setDescription("description danial");
         channelOrg.setTitle("and another danial");
 

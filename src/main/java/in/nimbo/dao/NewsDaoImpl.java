@@ -8,6 +8,7 @@ import com.rometools.rome.feed.synd.SyndEntryImpl;
 import in.nimbo.entity.News;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,11 +33,11 @@ public class NewsDaoImpl implements NewsDao {
         try {
             fis = new FileInputStream(new File("src/main/resources/db.properties"));
             props.load(fis);
-            Class.forName(props.getProperty("MYSQL_DB_DRIVER_CLASS"));
+            Class.forName(props.getProperty("db.mysql.driver_class"));
             mysqlDS = new MysqlDataSource();
-            mysqlDS.setURL(props.getProperty("MYSQL_DB_URL"));
-            mysqlDS.setUser(props.getProperty("MYSQL_DB_USERNAME"));
-            mysqlDS.setPassword(props.getProperty("MYSQL_DB_PASSWORD"));
+            mysqlDS.setURL(props.getProperty("db.mysql.url"));
+            mysqlDS.setUser(props.getProperty("db.mysql.username"));
+            mysqlDS.setPassword(props.getProperty("db.mysql.password"));
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -49,8 +50,7 @@ public class NewsDaoImpl implements NewsDao {
         ResultSet resultSet = null;
         if (filter == null || filter.isEmpty()) {
             sqlCommand = "SELECT * FROM News    ";
-        }
-        else {
+        } else {
             if (filter.getChannel() != null) {
                 sqlCommand += "RSSLink = " + filter.getChannel().getId();
             }
