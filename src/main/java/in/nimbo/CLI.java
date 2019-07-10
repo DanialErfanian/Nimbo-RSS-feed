@@ -10,12 +10,13 @@ import java.util.Scanner;
 public class CLI {
     private static final String INVALID_INPUT = "Invalid Input";
     private App app = new App(new NewsDaoImpl(), new ChannelDaoImpl());
-    private static final String help = "add <link> for add a channel" +
-            "news <filter> to get news with given filter:" +
-            "filter " +
+    private static final String help = "add <link> for add a channel\n" +
+            "news <filter> to get news with given filter:\n" +
             "news -channel tabnak.ir/rss -title باخت پرسپلیس";
 
     private String handle(String line) {
+        if (line.trim().length() == 0)
+            return "";
         if (line.equals("help")) {
             return help;
         }
@@ -28,7 +29,12 @@ public class CLI {
             app.addLink(line.substring(type.length() + 1));
             return "Link added successfully";
         } else if (type.equals("news")) {
-            FilterNews filter = Utility.parseNewsFilter(line.substring(type.length() + 1), app);
+            FilterNews filter;
+            if (line.length() == type.length()) {
+                filter = new FilterNews();
+            } else {
+                filter = Utility.parseNewsFilter(line.substring(type.length() + 1), app);
+            }
             if (filter == null)
                 return INVALID_INPUT;
             else {

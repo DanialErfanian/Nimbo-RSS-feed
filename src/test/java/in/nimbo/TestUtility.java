@@ -1,5 +1,6 @@
 package in.nimbo;
 
+import com.rometools.rome.feed.synd.SyndFeedImpl;
 import in.nimbo.dao.ChannelDao;
 import in.nimbo.dao.ChannelDaoImpl;
 import in.nimbo.dao.FilterNews;
@@ -15,6 +16,7 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
 
 import static in.nimbo.Utility.parseNewsFilter;
 
@@ -22,6 +24,7 @@ public class TestUtility {
     private static App app;
     private static Connection connection;
     private static ChannelDao channelDao;
+    private SimpleDateFormat formatter = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
 
     @BeforeClass
     public static void init() throws SQLException, ClassNotFoundException, IOException {
@@ -47,38 +50,62 @@ public class TestUtility {
 
     @Test
     public void parseNewFilterTest() throws ParseException {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
         FilterNews filter = new FilterNews();
         Assert.assertEquals(parseNewsFilter("", app), filter);
         Assert.assertNull(parseNewsFilter("-ti", app));
-
         Assert.assertNull(parseNewsFilter("-title", app));
         Assert.assertNull(parseNewsFilter("-title ", app));
+
         filter.setTitle("some title");
         Assert.assertEquals(parseNewsFilter("-title some title", app), filter);
+
         filter.setTitle("title");
         filter.setText("به سوی تو");
         String args = "-title " + filter.getTitle() + " -text " + filter.getText();
         Assert.assertEquals(parseNewsFilter(args, app), filter);
+
         Date start = new Date();
         filter.setStart(new Timestamp(formatter.parse(formatter.format(start)).getTime()));
         args += " -start " + formatter.format(start);
-        System.out.println(args);
         Assert.assertEquals(parseNewsFilter(args, app), filter);
 
         Date end = new Date();
         filter.setEnd(new Timestamp(formatter.parse(formatter.format(end)).getTime()));
         args += " -end " + formatter.format(end);
-        System.out.println(args);
         Assert.assertEquals(parseNewsFilter(args, app), filter);
 
         Channel channel = new Channel(-1, "http://google.com", "google.com", new Timestamp(new Date().getTime()), "Description", "title");
         Assert.assertTrue(channelDao.add(channel));
+
         channel.setId(1);
         filter.setChannel(channel);
         args += " -channel " + channel.getRSSUrl();
         Assert.assertEquals(parseNewsFilter(args, app), filter);
-        Assert.assertEquals(parseNewsFilter(args, app).toString(), filter.toString());
+        Assert.assertEquals(Objects.requireNonNull(parseNewsFilter(args, app)).toString(), filter.toString());
         Assert.assertNotEquals(parseNewsFilter(args, app), null);
+    }
+
+    @Test
+    public void syndFeedToChannelTest() {
+        SyndFeedImpl syndFeed = new SyndFeedImpl();
+        String RSSUrl = "http://danial.org :{";
+        syndFeed.setLink("https://danial.ir");
+        syndFeed.setTitle("danial");
+        syndFeed.setDescription("Easy Description");
+        syndFeed.setPublishedDate(new Date());
+        Channel channel = Utility.syndFeedToChannel(syndFeed, RSSUrl);
+        Assert.assertEquals(channel.getRSSUrl(), RSSUrl);
+        Assert.assertEquals(channel.getLink(), syndFeed.getLink());
+        Assert.assertEquals(channel.getTitle(), syndFeed.getTitle());
+        Assert.assertEquals(channel.getDescription(), syndFeed.getDescription());
+        Assert.assertEquals(channel.getLastUpdate(), new Timestamp(syndFeed.getPublishedDate().getTime()));
+    }
+
+    @Test
+    public void parseDate() throws ParseException {
+        Assert.assertNull(Utility.parseDate("something wrong"));
+        Date date = new Date();
+        date = formatter.parse(formatter.format(date));
+        Assert.assertEquals(Utility.parseDate(formatter.format(date)), new Timestamp(date.getTime()));
     }
 }

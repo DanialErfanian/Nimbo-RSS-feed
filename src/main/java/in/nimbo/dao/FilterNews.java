@@ -3,6 +3,7 @@ package in.nimbo.dao;
 import in.nimbo.entity.Channel;
 
 import java.sql.Timestamp;
+import java.util.Objects;
 
 public class FilterNews {
     private Timestamp start, end;
@@ -51,6 +52,27 @@ public class FilterNews {
 
     public boolean isEmpty() {
         return start == null && end == null && title == null && text == null && channel == null;
+    }
+
+    @Override
+    public String toString() {
+        return "title: " + this.title +
+                ", text: " + this.text +
+                ", start: " + this.start +
+                ", end: " + this.end +
+                ", channel: " + channel;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof FilterNews))
+            return false;
+        FilterNews that = (FilterNews) o;
+        return Objects.equals(start, that.start) &&
+                Objects.equals(end, that.end) &&
+                Objects.equals(title, that.title) &&
+                Objects.equals(text, that.text) &&
+                Objects.equals(channel, that.channel);
     }
 }
     

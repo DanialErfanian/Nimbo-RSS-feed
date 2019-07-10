@@ -93,6 +93,5 @@ public class Channel {
                 ", link: " + link +
                 ", lastUpdate: " + lastUpdate +
                 ", description: " + description;
-
     }
 }

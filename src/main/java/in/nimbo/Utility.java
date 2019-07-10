@@ -1,5 +1,6 @@
 package in.nimbo;
 
+import com.rometools.rome.feed.synd.SyndFeed;
 import de.l3s.boilerpipe.BoilerpipeProcessingException;
 import de.l3s.boilerpipe.extractors.ArticleExtractor;
 import in.nimbo.dao.FilterNews;
@@ -15,11 +16,11 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-public class Utility {
+class Utility {
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
 
-    public static String extractText(String link) {
+    static String extractText(String link) {
         String article = null;
         try {
             LOGGER.info("Extracting news text...");
@@ -47,6 +48,9 @@ public class Utility {
         String[] split = args.split("-");
         FilterNews filter = new FilterNews();
         for (String s : split) {
+            s = s.trim();
+            if (s.length() == 0)
+                continue;
             String[] split1 = s.split("\\s+");
             if (split1.length < 2)
                 return null;
@@ -81,16 +85,26 @@ public class Utility {
                         filter.setChannel(channel);
             }
         }
-        return null;
+        return filter;
     }
 
-    private static SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static SimpleDateFormat formatter = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
 
-    private static Timestamp parseDate(String value) {
+    public static Timestamp parseDate(String value) {
         try {
             return new Timestamp(formatter.parse(value).getTime());
         } catch (ParseException e) {
             return null;
         }
+    }
+
+    static Channel syndFeedToChannel(SyndFeed feed, String url) {
+        Channel channel = new Channel();
+        channel.setDescription(feed.getDescription());
+        channel.setLink(feed.getLink());
+        channel.setTitle(feed.getTitle());
+        channel.setLastUpdate(new Timestamp(feed.getPublishedDate().getTime()));
+        channel.setRSSUrl(url);
+        return channel;
     }
 }

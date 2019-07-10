@@ -43,7 +43,6 @@ public class TestDataSource {
         for (String value : inst) {
             if (!value.trim().equals("")) {
                 st.executeUpdate(value);
-                System.out.println(">>" + value);
             }
         }
 
