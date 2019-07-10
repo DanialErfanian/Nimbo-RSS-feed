@@ -16,40 +16,25 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class App {
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
     private NewsDao newsDao;
     private ChannelDao channelDao;
+    private ScheduledExecutorService scheduledExecutorService;
 
     public App(NewsDao newsDao, ChannelDao channelDao) {
         this.newsDao = newsDao;
         this.channelDao = channelDao;
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(10);
     }
 
     public void addLink(String url) {
-        try {
-            SyndFeed feed = new SyndFeedInput().build(new XmlReader(new URL(url)));
-            Channel channel = Utility.syndFeedToChannel(feed, url);
-            if (channelDao.getChannel(url) == null) {
-                channelDao.add(channel);
-            } else {
-                channelDao.update(channel);
-            }
-            for (SyndEntry s : feed.getEntries()) {
-                News news = new News();
-                news.setEntry(s);
-                news.setText(Utility.extractText(s.getLink()));
-                news.setId(channelDao.getChannel(url).getId());
-                if (newsDao.getNews(s.getLink()) == null) {
-                    newsDao.add(news);
-                } else {
-                    newsDao.update(news);
-                }
-            }
-        } catch (FeedException | IllegalArgumentException | IOException e) {
-            LOGGER.error("There was a problem on loading URL", e);
-        }
+        scheduledExecutorService.scheduleWithFixedDelay(new RSSReadThread(channelDao, newsDao, url),
+                0, 30, TimeUnit.SECONDS);
     }
 
     public News[] getNews(FilterNews filter) {

@@ -60,6 +60,7 @@ public class CLI {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        System.out.println(help);
         CLI cli = new CLI();
         while (scanner.hasNextLine())
             System.out.println(cli.handle(scanner.nextLine()));
