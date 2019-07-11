@@ -118,3 +118,5 @@ hs_err_pid*
 target/
 
 # End of https://www.gitignore.io/api/java,java-web,intellij+all
+
+RSSFeedLog.html
