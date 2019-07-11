@@ -3,7 +3,10 @@ package in.nimbo;
 import org.h2.jdbcx.JdbcDataSource;
 
 import javax.sql.DataSource;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -15,7 +18,7 @@ public class TestDataSource {
     //  Database credentials
     private static final String USER = "sa";
     private static final String PASS = "";
-
+    private static boolean TABLES_CREATED = false;
     static private Connection connection;
 
     public static DataSource init() throws SQLException, ClassNotFoundException, IOException {
@@ -25,7 +28,8 @@ public class TestDataSource {
         ds.setUser(USER);
         ds.setPassword(PASS);
         connection = ds.getConnection();
-        createTables();
+        if (TABLES_CREATED == false)
+            createTables();
         return ds;
     }
 
@@ -45,6 +49,6 @@ public class TestDataSource {
                 st.executeUpdate(value);
             }
         }
-
+        TABLES_CREATED = true;
     }
 }
