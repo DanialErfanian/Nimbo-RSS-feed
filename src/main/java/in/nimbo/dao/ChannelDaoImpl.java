@@ -119,7 +119,7 @@ public class ChannelDaoImpl implements ChannelDao {
             res = runQuery(statement, channel);
             connection.close();
         } catch (SQLException e) {
-            LOGGER.error("Error in update a row of RSSChannel table", e);
+            LOGGER.error("Error in update a row of RSSChannel table\n Link: " + channel.getRSSUrl(), e);
         }
         return res;
     }
@@ -143,7 +143,7 @@ public class ChannelDaoImpl implements ChannelDao {
             res = runQuery(statement, channel);
             connection.close();
         } catch (SQLException e) {
-            LOGGER.error("Error in insert into RSSChannel table", e);
+            LOGGER.error("Error in insert into RSSChannel table\nLink: " + channel.getRSSUrl(), e);
         }
         return res;
     }

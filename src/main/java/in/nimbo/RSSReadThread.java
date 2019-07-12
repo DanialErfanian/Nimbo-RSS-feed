@@ -50,7 +50,7 @@ public class RSSReadThread implements Runnable{
                 }
             }
         } catch (FeedException | IllegalArgumentException | IOException e) {
-            LOGGER.error("There was a problem on loading URL", e);
+            LOGGER.error("There was a problem on loading URL " + url, e);
         }
     }
 }

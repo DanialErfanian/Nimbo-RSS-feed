@@ -122,7 +122,7 @@ public class NewsDaoImpl implements NewsDao {
                 return new News(syndEntry, text);
             }
         } catch (SQLException s) {
-            LOGGER.error("There was a problem on update News table!", s);
+            LOGGER.error("There was a problem on update News table!\nLink: " + url, s);
         } catch (Exception e) {
             LOGGER.error("ERROR: ", e);
         }
@@ -150,7 +150,7 @@ public class NewsDaoImpl implements NewsDao {
             ps.executeUpdate();
             LOGGER.info("News information updated.");
         } catch (SQLException s) {
-            LOGGER.error("There was a problem on update News table!", s);
+            LOGGER.error("There was a problem on update News table!\nLink: " + news.getEntry().getLink(), s);
         } catch (Exception e) {
             LOGGER.error("ERROR: ", e);
         }
@@ -177,7 +177,7 @@ public class NewsDaoImpl implements NewsDao {
             ps.executeUpdate();
             LOGGER.info("Data inserted into News table.");
         } catch (SQLException s) {
-            LOGGER.error("There was a problem on insert data into News table!", s);
+            LOGGER.error("There was a problem on insert data into News table!\nLink:" + news.getEntry().getLink(), s);
         } catch (Exception e) {
             LOGGER.error("ERROR: ", e);
         }
