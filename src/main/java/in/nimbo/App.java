@@ -30,11 +30,16 @@ public class App {
         this.newsDao = newsDao;
         this.channelDao = channelDao;
         scheduledExecutorService = new ScheduledThreadPoolExecutor(10);
+        List<Channel> channels = this.getAllChannels();
+        for (Channel c: channels) {
+            scheduledExecutorService.scheduleWithFixedDelay(new RSSReadThread(channelDao, newsDao, c.getRSSUrl()),
+                    0, 60, TimeUnit.SECONDS);
+        }
     }
 
     public void addLink(String url) {
         scheduledExecutorService.scheduleWithFixedDelay(new RSSReadThread(channelDao, newsDao, url),
-                0, 30, TimeUnit.SECONDS);
+                0, 60, TimeUnit.SECONDS);
     }
 
     public News[] getNews(FilterNews filter) {

@@ -23,7 +23,7 @@ class Utility {
     static String extractText(String link) {
         String article = null;
         try {
-            LOGGER.info("Extracting news text...");
+            LOGGER.info("Extracting news text from" + link + "...");
             String encode;
             if (!link.contains("%")) {
                 int index = link.lastIndexOf('/') + 1;
